@@ -1,13 +1,17 @@
 package com.example.msbootcoinwallet.service;
 
+import com.example.msbootcoinwallet.dto.PaymentDto;
 import com.example.msbootcoinwallet.model.BootcoinTransaction;
 import com.example.msbootcoinwallet.model.BootcoinWallet;
+import com.example.msbootcoinwallet.model.CoinConfiguration;
+import com.example.msbootcoinwallet.producer.PaymentTransactionProducer;
+import com.example.msbootcoinwallet.producer.PaymentWalletProducer;
 import com.example.msbootcoinwallet.repository.BootcoinTransactionRepository;
 import com.example.msbootcoinwallet.repository.BootcoinWalletRepository;
+import com.example.msbootcoinwallet.repository.CoinConfiguratioRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +23,15 @@ public class BootcoinTransactionServiceImpl implements BootcoinTransactionServic
 
     @Autowired
     private BootcoinWalletRepository bootcoinWalletRepository;
+
+    @Autowired
+    private PaymentTransactionProducer paymentTransactionProducer;
+
+    @Autowired
+    private PaymentWalletProducer paymentWalletProducer;
+
+    @Autowired
+    private CoinConfiguratioRepo coinConfiguratioRepo;
 
 
     @Override
@@ -44,22 +57,41 @@ public class BootcoinTransactionServiceImpl implements BootcoinTransactionServic
     }
 
     @Override
-    public Boolean makeTranaction(String phoneBuyer, String phoneSeller, BigDecimal amount) {
-        BootcoinWallet customerBuyer = bootcoinWalletRepository.findByCellphoneNumber(phoneBuyer);
-        BootcoinWallet customerSeller = bootcoinWalletRepository.findByCellphoneNumber(phoneSeller);
+    public Boolean makeTranaction(BootcoinTransaction bootcoinTransaction) {
+        BootcoinWallet customerBuyer = bootcoinWalletRepository.findByCellphoneNumber(bootcoinTransaction.getPhoneBuyer());
+        BootcoinWallet customerSeller = bootcoinWalletRepository.findByCellphoneNumber(bootcoinTransaction.getPhoneSeller());
 
         if (customerBuyer == null || customerSeller == null) {
             return false;
         }
 
-        if (customerSeller.getBalance().compareTo(amount) < 0) {
+        if (customerSeller.getBalance().compareTo(bootcoinTransaction.getAmountCoin()) < 0) {
             return false;
         }
 
-        customerSeller.setBalance(customerSeller.getBalance().subtract(amount));
+        customerSeller.setBalance(customerSeller.getBalance().subtract(bootcoinTransaction.getAmountCoin()));
         bootcoinWalletRepository.save(customerSeller);
-        customerBuyer.setBalance(customerBuyer.getBalance().add(amount));
+        customerBuyer.setBalance(customerBuyer.getBalance().add(bootcoinTransaction.getAmountCoin()));
         bootcoinWalletRepository.save(customerBuyer);
+
+        CoinConfiguration bootCoin = coinConfiguratioRepo.findByCoinName("BootCoin");
+
+        if (bootCoin == null) {
+            return false;
+        }
+
+        PaymentDto paymentDto = new PaymentDto();
+        paymentDto.setAmount(bootcoinTransaction.getAmountCoin().multiply(bootCoin.getPurchasePrice()));
+        paymentDto.setPhoneNumberOrigin(bootcoinTransaction.getPhoneBuyer());
+        paymentDto.setPhoneNumberDestination(bootcoinTransaction.getPhoneSeller());
+
+        if (bootcoinTransaction.getPaymentMode().equalsIgnoreCase("yanki")) {
+            paymentWalletProducer.sendMessage(paymentDto);
+        }
+
+        if (bootcoinTransaction.getPaymentMode().equalsIgnoreCase("transferencia")) {
+            paymentTransactionProducer.sendMessage(paymentDto);
+        }
         return true;
     }
 }

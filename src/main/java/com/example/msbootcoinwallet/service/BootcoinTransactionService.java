@@ -2,7 +2,6 @@ package com.example.msbootcoinwallet.service;
 
 import com.example.msbootcoinwallet.model.BootcoinTransaction;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public interface BootcoinTransactionService {
@@ -10,5 +9,5 @@ public interface BootcoinTransactionService {
     BootcoinTransaction findById(String id);
     BootcoinTransaction save(BootcoinTransaction bootcoinTransaction);
     BootcoinTransaction update(BootcoinTransaction bootcoinTransaction);
-    Boolean makeTranaction(String phoneBuyer, String phoneSeller, BigDecimal amount);
+    Boolean makeTranaction(BootcoinTransaction bootcoinTransaction);
 }

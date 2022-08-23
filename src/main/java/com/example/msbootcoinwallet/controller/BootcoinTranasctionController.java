@@ -22,11 +22,7 @@ public class BootcoinTranasctionController {
     @Autowired
     private BootcoinTransactionService service;
 
-    @Autowired
-    private PaymentTransactionProducer paymentTransactionProducer;
 
-    @Autowired
-    private PaymentWalletProducer paymentWalletProducer;
 
     @GetMapping
     public ResponseEntity<List<BootcoinTransaction>> findAll() {
@@ -64,21 +60,7 @@ public class BootcoinTranasctionController {
         bootcoinTransactionBD.setStatus("FINISHED");
         bootcoinTransactionBD.setUpdatedAt(LocalDateTime.now());
 
-        PaymentDto paymentDto = new PaymentDto();
-        paymentDto.setAmount(bootcoinTransactionBD.getAmountCoin());
-        paymentDto.setPhoneNumberOrigin(bootcoinTransactionBD.getPhoneBuyer());
-        paymentDto.setPhoneNumberDestination(bootcoinTransactionBD.getPhoneSeller());
-
-        if (bootcoinTransactionBD.getPaymentMode().equalsIgnoreCase("yanki")) {
-            paymentWalletProducer.sendMessage(paymentDto);
-        }
-
-        if (bootcoinTransactionBD.getPaymentMode().equalsIgnoreCase("transferencia")) {
-            paymentTransactionProducer.sendMessage(paymentDto);
-        }
-
-        return (service.makeTranaction(bootcoinTransactionBD.getPhoneBuyer(), bootcoinTransactionBD.getPhoneSeller(),
-                bootcoinTransactionBD.getAmountCoin()))
+        return (service.makeTranaction(bootcoinTransactionBD))
                 ? ResponseEntity.ok().body(service.update(bootcoinTransactionBD))
                 : ResponseEntity.badRequest().build();
     }
