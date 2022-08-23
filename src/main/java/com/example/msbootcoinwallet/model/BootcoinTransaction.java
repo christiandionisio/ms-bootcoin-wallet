@@ -16,8 +16,8 @@ public class BootcoinTransaction {
     @Id
     private String id;
     private BigDecimal amountCoin;
-    private String phoneOrigin;
-    private String phoneDestiny;
+    private String phoneBuyer;
+    private String phoneSeller;
     private String paymentMode;
     private String status;
     private LocalDateTime createdAt;

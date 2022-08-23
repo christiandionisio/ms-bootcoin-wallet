@@ -1,5 +1,6 @@
 package com.example.msbootcoinwallet.controller;
 
+import com.example.msbootcoinwallet.dto.AcceptExchanceDto;
 import com.example.msbootcoinwallet.model.BootcoinTransaction;
 import com.example.msbootcoinwallet.service.BootcoinTransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,22 @@ public class BootcoinTranasctionController {
                 .buildAndExpand(bootcoinTransaction.getId())
                 .toUri();
         return ResponseEntity.created(location).build();
+    }
+
+    @PutMapping
+    public ResponseEntity<BootcoinTransaction> update(@RequestBody AcceptExchanceDto acceptExchanceDto) {
+        BootcoinTransaction bootcoinTransactionBD = service.findById(acceptExchanceDto.getIdTransaction());
+        if (bootcoinTransactionBD == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        bootcoinTransactionBD.setStatus("FINISHED");
+        bootcoinTransactionBD.setUpdatedAt(LocalDateTime.now());
+
+        return (service.makeTranaction(bootcoinTransactionBD.getPhoneBuyer(), bootcoinTransactionBD.getPhoneSeller(),
+                bootcoinTransactionBD.getAmountCoin()))
+                ? ResponseEntity.ok().body(service.update(bootcoinTransactionBD))
+                : ResponseEntity.badRequest().build();
     }
 
 }
